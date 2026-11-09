@@ -47,6 +47,21 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
         }
       </header>
 
+      {
+        toc.length > 2 && (
+          <details class="toc-inline">
+            <summary>목차</summary>
+            <ul>
+              {toc.map((h) => (
+                <li class={`d${h.depth}`}>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )
+      }
+
       <div class="prose">
         <Content />
       </div>
@@ -127,12 +142,14 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
 </script>
 
 <style>
-  /* 본문 720 + 오른쪽 목차. 좁으면 목차는 숨긴다 */
-  .layout { display: grid; grid-template-columns: minmax(0, 720px) 220px; gap: 64px; justify-content: space-between; }
+  /* 본문 720 + 오른쪽 목차. 좁으면 목차는 숨긴다.
+     왼쪽은 트리 레일이 들어갈 여백을 따로 둔다 (레일이 화면 가장자리에 붙어 답답해 보이지 않게) */
+  .layout { display: grid; grid-template-columns: minmax(0, 720px) 220px; gap: 64px; justify-content: space-between; padding-left: 64px; }
   @media (max-width: 1199px) {
-    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout { grid-template-columns: minmax(0, 1fr); padding-left: 48px; }
     .toc { display: none; }
   }
+  @media (max-width: 945px) { .layout { padding-left: 0; } }
 
   .post-head { padding-top: 56px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
   .series { font-size: 13px; font-weight: 700; color: var(--faint); margin-bottom: 10px; }
@@ -142,6 +159,15 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
   .meta a { color: var(--faint); font-weight: 600; text-decoration: underline; text-decoration-color: var(--uline); text-underline-offset: 3px; }
   .meta a:hover { color: var(--ink); }
   .post-head .tags { margin-top: 14px; }
+
+  /* 접는 목차 — 오른쪽 목차가 숨는 폭에서만 */
+  .toc-inline { display: none; margin-top: 20px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; font-size: 14px; }
+  .toc-inline summary { cursor: pointer; font-weight: 700; color: var(--ink); }
+  .toc-inline ul { list-style: none; margin-top: 10px; }
+  .toc-inline li { padding-block: 3px; line-height: 1.5; }
+  .toc-inline li.d3 { padding-left: 14px; font-size: 13.5px; }
+  .toc-inline a { color: var(--body); font-weight: 500; }
+  @media (max-width: 1199px) { .toc-inline { display: block; } }
 
   .toc { position: sticky; top: 32px; align-self: start; margin-top: 56px; max-height: calc(100vh - 64px); overflow: auto; font-size: 13px; }
   .toc-title { font-size: 12px; font-weight: 700; color: var(--faint); margin-bottom: 10px; }
@@ -180,6 +206,14 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
   }
 
   .prose { padding-top: 12px; font-size: 16px; line-height: 1.85; word-break: keep-all; overflow-wrap: anywhere; }
+  @media (max-width: 600px) {
+    .post-head { padding-top: 36px; padding-bottom: 22px; }
+    .prose { font-size: 15.5px; line-height: 1.8; }
+    .prose :global(h2) { font-size: 21px; margin-top: 44px; }
+    .prose :global(h3) { font-size: 17.5px; margin-top: 30px; }
+    .prose :global(pre) { font-size: 12.5px; padding: 12px 14px; }
+    .prose :global(blockquote) { padding: 14px 16px; }
+  }
 
   .prose :global(> * + *) { margin-top: 18px; }
   .prose :global(h2) { margin-top: 56px; font-size: 24px; font-weight: 800; line-height: 1.4; letter-spacing: -0.02em; color: var(--ink); }

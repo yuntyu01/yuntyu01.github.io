@@ -17,7 +17,8 @@
   --w: 860px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ::before/::after도 border-box — 빠지면 고리(○)의 테두리가 바깥에 더해져 원이 선보다 2px 오른쪽에 그려진다 */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; scroll-padding-top: 24px; }
 body {
   font-family: var(--sans);
@@ -42,7 +43,7 @@ b, strong { font-weight: 700; color: var(--ink); }
 .wrap { width: 100%; max-width: var(--w); margin: 0 auto; padding: 0 24px; }
 @media (max-width: 600px) { .wrap { padding: 0 18px; } }
 /* 글 페이지: 본문 + 오른쪽 목차 */
-@media (min-width: 1200px) { .wrap.wide { max-width: 1160px; } }
+@media (min-width: 1200px) { .wrap.wide { max-width: 1120px; } }
 
 /* ── 머리·바닥 ───────────────────────────────────────── */
 .site-header { border-bottom: 1px solid var(--line); }
@@ -58,12 +59,13 @@ b, strong { font-weight: 700; color: var(--ink); }
 
 /* ── 커버 (포폴 첫 화면과 같은 구성) ───────────────────── */
 .cover { padding-top: 64px; }
+@media (max-width: 600px) { .cover { padding-top: 40px; } .cover-rule { margin: 26px 0 20px; } }
 .cover h1 { font-size: clamp(40px, 9vw, 56px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--ink); }
 .cover .who { margin-top: 14px; font-size: 15px; color: var(--body); }
 .cover-rule { border: 0; border-top: 1px solid var(--line); margin: 34px 0 26px; }
 /* 칸 너비는 글자 길이대로, 첫 칸은 왼쪽 끝·마지막 칸은 오른쪽 끝에 (아래 버튼·박스와 열을 맞춘다). 좁으면 한 줄에 하나 */
 .contacts { display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; gap: 18px 24px; }
-@media (max-width: 600px) { .contacts { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .contacts { grid-template-columns: 1fr 1fr; gap: 14px 16px; justify-content: stretch; } .contacts .vl { font-size: 14.5px; overflow-wrap: anywhere; } }
 .contacts .clb { font-size: 12.5px; color: var(--faint); font-weight: 600; }
 .contacts .vl { display: block; margin-top: 3px; font-size: 15.5px; font-weight: 700; color: var(--ink); }
 .contacts .vl:hover { text-decoration: underline; text-decoration-color: var(--uline); text-underline-offset: 4px; }
@@ -89,6 +91,7 @@ b, strong { font-weight: 700; color: var(--ink); }
 .dark-cta-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .dark-cta b { color: #fff; font-size: 16.5px; }
 .dark-cta small { font-size: 13px; color: rgba(255, 255, 255, 0.72); font-weight: 400; }
+@media (max-width: 600px) { .dark-cta { padding: 18px 18px; gap: 14px; } .dark-cta-icon { flex-basis: 44px; width: 44px; height: 44px; font-size: 17px; } .dark-cta b { font-size: 15.5px; } .dark-cta small { font-size: 12.5px; } }
 @media (prefers-reduced-motion: reduce) { .dark-cta-icon::after { display: none; } .dark-cta, .dark-cta:hover { transform: none; transition: none; } }
 
 /* ── 깃 트리: 묶음(●) 아래 세로선, 항목(○)은 박스 ─────────────── */
@@ -141,8 +144,15 @@ a.item:hover .item-title { text-decoration: underline; text-decoration-color: va
 .post-item.has-thumb .item-title { margin-top: 0; }
 .thumb { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border: 1px solid var(--line); border-radius: 8px; background: var(--bg2); }
 @media (max-width: 600px) {
-  .post-item.has-thumb { grid-template-columns: 88px minmax(0, 1fr); column-gap: 14px; }
-  .thumb { aspect-ratio: 1; }
+  /* 좁으면 썸네일 옆에는 제목만 두고, 설명·태그는 박스 폭 전체로 (좁은 칸에 설명이 길게 늘어지지 않게) */
+  .post-item.has-thumb { grid-template-columns: 72px minmax(0, 1fr); column-gap: 12px; }
+  .post-item.has-thumb .post-body { display: contents; }
+  .post-item.has-thumb .thumb { grid-column: 1; grid-row: 2; aspect-ratio: 1; border-radius: 6px; }
+  .post-item.has-thumb .item-title { grid-column: 2; grid-row: 2; align-self: center; }
+  .post-item.has-thumb .item-desc, .post-item.has-thumb .tags { grid-column: 1 / -1; }
+  .post-item.has-thumb .item-desc { margin-top: 12px; }
+  .item-title { font-size: 16px; line-height: 1.45; }
+  .item-desc { font-size: 14px; }
 }
 
 
