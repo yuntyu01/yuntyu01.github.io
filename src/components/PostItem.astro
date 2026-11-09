@@ -1,0 +1,31 @@
+---
+// 글 한 편 = 박스 하나 (박스 전체가 링크). 맨 위 날짜 줄 → 그 아래 왼쪽 썸네일 · 오른쪽 제목이 같은 줄에서 시작
+import { fmtDate, type Post } from "../lib/site";
+
+interface Props {
+  post: Post;
+}
+const { post } = Astro.props;
+const d = post.data;
+---
+
+<a class:list={["item", "post-item", { "has-thumb": d.thumbnail }]} href={`/posts/${post.id}/`}>
+  <p class="item-meta">
+    <time datetime={d.date.toISOString()}>{fmtDate(d.date)}</time>
+    {d.series && <span> · <span class="series">{d.series}</span></span>}
+  </p>
+  {d.thumbnail && <img class="thumb" src={d.thumbnail} alt="" loading="lazy" decoding="async" />}
+  <div class="post-body">
+    <h3 class="item-title">{d.title}</h3>
+    {d.description && <p class="item-desc">{d.description}</p>}
+    {
+      d.tags.length > 0 && (
+        <div class="tags">
+          {d.tags.map((t) => (
+            <span class="tag">{t}</span>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</a>

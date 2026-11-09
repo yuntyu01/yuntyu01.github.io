@@ -1,0 +1,35 @@
+---
+import Base from "../../layouts/Base.astro";
+import PostItem from "../../components/PostItem.astro";
+import { SITE, allPosts } from "../../lib/site";
+
+const posts = await allPosts();
+// 연도별 묶음 (최신 연도 먼저) — 연도 = 트리의 ●
+const years = [...new Set(posts.map((p) => p.data.date.getFullYear()))];
+---
+
+<Base title="글" description="KoDeploy를 만들고 운영하며 겪은 장애·설계 기록">
+  <section class="cover">
+    <h1>POSTS</h1>
+    <p class="who">{SITE.name} · 장애와 설계 기록 <span class="muted">· {posts.length}편</span></p>
+  </section>
+
+  {
+    years.map((y) => {
+      const list = posts.filter((p) => p.data.date.getFullYear() === y);
+      return (
+        <section class="tree">
+          <div class="tree-head">
+            <h2 class="tree-title">{y}</h2>
+            <span class="tree-sub">{list.length}편</span>
+          </div>
+          <div class="tree-body">
+            {list.map((p) => (
+              <PostItem post={p} />
+            ))}
+          </div>
+        </section>
+      );
+    })
+  }
+</Base>

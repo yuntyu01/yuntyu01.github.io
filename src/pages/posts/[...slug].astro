@@ -1,0 +1,218 @@
+---
+import { render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import { allPosts, fmtDate, readingMinutes, SITE } from "../../lib/site";
+
+export async function getStaticPaths() {
+  const posts = await allPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post, posts } }));
+}
+
+const { post, posts } = Astro.props;
+const { Content, headings } = await render(post);
+const d = post.data;
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+
+// 같은 시리즈 안에서 앞뒤 글 (오래된 → 최신 순서)
+const series = d.series
+  ? posts.filter((p) => p.data.series === d.series).sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf())
+  : [];
+const idx = series.findIndex((p) => p.id === post.id);
+const prev = idx > 0 ? series[idx - 1] : null;
+const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
+---
+
+<Base title={d.title} description={d.description} wide>
+  <div class="layout">
+    <article>
+      <!-- 깃 트리: 글 제목 ● (검정) → 큰 절·작은 절 ○ (회색 고리), 포폴의 프로젝트 ● · 사례 ○ 와 같은 규칙 -->
+      <div class="post-tree">
+      <header class="post-head">
+        {d.series && <p class="series">{d.series} 시리즈 · {idx + 1}/{series.length}</p>}
+        <h1>{d.title}</h1>
+        <p class="meta">
+          <time datetime={d.date.toISOString()}>{fmtDate(d.date)}</time>
+          {d.updated && <span>수정 {fmtDate(d.updated)}</span>}
+          <span>{readingMinutes(post.body ?? "")}분 분량</span>
+          {d.velog && <a href={d.velog}>velog에 처음 게시</a>}
+        </p>
+        {
+          d.tags.length > 0 && (
+            <div class="tags">
+              {d.tags.map((t) => (
+                <span class="tag">{t}</span>
+              ))}
+            </div>
+          )
+        }
+      </header>
+
+      <div class="prose">
+        <Content />
+      </div>
+      </div>
+
+      {
+        (prev || next) && (
+          <nav class="series-nav">
+            {prev ? (
+              <a href={`/posts/${prev.id}/`} class="sn">
+                <span class="muted">← 이전 글</span>
+                {prev.data.title}
+              </a>
+            ) : (
+              <span />
+            )}
+            {next && (
+              <a href={`/posts/${next.id}/`} class="sn next">
+                <span class="muted">다음 글 →</span>
+                {next.data.title}
+              </a>
+            )}
+          </nav>
+        )
+      }
+
+      <div class="after-links">
+        <a class="post-link" href="/posts/">글 목록</a>
+        <a class="post-link" href={SITE.portfolio}>포트폴리오</a>
+      </div>
+    </article>
+
+    {
+      toc.length > 2 && (
+        <aside class="toc" aria-label="목차">
+          <p class="toc-title">목차</p>
+          <ul>
+            {toc.map((h) => (
+              <li class={`d${h.depth}`}>
+                <a href={`#${h.slug}`} data-slug={h.slug}>
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+  </div>
+</Base>
+
+<script>
+  // 트리 레일 시작점 = 글 제목 첫 줄의 ● 가운데
+  const tree = document.querySelector<HTMLElement>(".post-tree");
+  const title = tree?.querySelector<HTMLElement>("h1");
+  const placeRail = () => {
+    if (!tree || !title) return;
+    const lh = parseFloat(getComputedStyle(title).lineHeight) || title.offsetHeight;
+    tree.style.setProperty("--rail-top", `${title.offsetTop + lh / 2}px`);
+  };
+  placeRail();
+  addEventListener("load", placeRail);
+  addEventListener("resize", placeRail);
+
+  // 목차: 지금 읽는 절을 진하게
+  const links = new Map<string, HTMLAnchorElement>();
+  document.querySelectorAll<HTMLAnchorElement>(".toc a[data-slug]").forEach((a) => links.set(a.dataset.slug!, a));
+  if (links.size) {
+    const heads = [...links.keys()].map((s) => document.getElementById(s)).filter(Boolean) as HTMLElement[];
+    const update = () => {
+      let cur = heads[0];
+      for (const h of heads) if (h.getBoundingClientRect().top < 100) cur = h;
+      links.forEach((a, s) => a.classList.toggle("on", s === cur?.id));
+    };
+    addEventListener("scroll", update, { passive: true });
+    update();
+  }
+</script>
+
+<style>
+  /* 본문 720 + 오른쪽 목차. 좁으면 목차는 숨긴다 */
+  .layout { display: grid; grid-template-columns: minmax(0, 720px) 220px; gap: 64px; justify-content: space-between; }
+  @media (max-width: 1199px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .toc { display: none; }
+  }
+
+  .post-head { padding-top: 56px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+  .series { font-size: 13px; font-weight: 700; color: var(--faint); margin-bottom: 10px; }
+  h1 { font-size: clamp(26px, 5vw, 34px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.3; color: var(--ink); word-break: keep-all; }
+  .meta { margin-top: 14px; font-size: 13px; color: var(--faint); display: flex; flex-wrap: wrap; row-gap: 4px; }
+  .meta > :global(* + *)::before { content: "·"; margin-inline: 7px; color: var(--uline); display: inline-block; }
+  .meta a { color: var(--faint); font-weight: 600; text-decoration: underline; text-decoration-color: var(--uline); text-underline-offset: 3px; }
+  .meta a:hover { color: var(--ink); }
+  .post-head .tags { margin-top: 14px; }
+
+  .toc { position: sticky; top: 32px; align-self: start; margin-top: 56px; max-height: calc(100vh - 64px); overflow: auto; font-size: 13px; }
+  .toc-title { font-size: 12px; font-weight: 700; color: var(--faint); margin-bottom: 10px; }
+  .toc ul { list-style: none; border-left: 2px solid var(--line); }
+  .toc li { line-height: 1.5; }
+  .toc a { display: block; margin-left: -2px; padding: 4px 0 4px 14px; border-left: 2px solid transparent; color: var(--faint); font-weight: 500; }
+  .toc li.d3 a { padding-left: 26px; font-size: 12.5px; }
+  .toc a:hover { color: var(--ink); }
+  .toc a.on { color: var(--ink); font-weight: 700; border-left-color: var(--ink); }
+
+  /* ── 트리 레일 ─────────────────────────────────
+     세로선 가운데 = -33px. 노드는 크기의 절반만큼 왼쪽으로 빼서 선 위에 올린다.
+     글 제목 ● 12px 검정 / 큰 절 ○ 10px / 작은 절 ○ 8px (회색 고리). 짝수 크기 + 정수 좌표라 선 가운데에 정확히 */
+  .post-tree { position: relative; }
+  .post-tree::before { content: ""; position: absolute; left: -34px; top: var(--rail-top, 90px); bottom: 0; border-left: 2px solid var(--rail); }
+  h1, .prose :global(h2), .prose :global(h3) { position: relative; }
+  h1::after {
+    content: ""; position: absolute; left: -39px; top: 0.65em; transform: translateY(-50%);
+    width: 12px; height: 12px; border-radius: 50%; background: var(--ink);
+  }
+  .prose :global(h2)::after {
+    content: ""; position: absolute; left: -38px; top: 0.7em; transform: translateY(-50%);
+    width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--node); background: var(--bg);
+  }
+  .prose :global(h3)::after {
+    content: ""; position: absolute; left: -37px; top: 0.75em; transform: translateY(-50%);
+    width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--node); background: var(--bg);
+  }
+  /* 왼쪽 여백이 모자라면 트리를 안쪽으로 (포폴 슬림 모드와 같은 방식) — 선 가운데 = 안쪽 26px 기준 -20px */
+  @media (max-width: 945px) {
+    .post-tree { padding-left: 26px; }
+    .post-tree::before { left: 5px; }
+    h1::after { left: -25px; width: 10px; height: 10px; }
+    .prose :global(h2)::after { left: -24px; width: 8px; height: 8px; }
+    .prose :global(h3)::after { left: -23px; width: 6px; height: 6px; }
+  }
+
+  .prose { padding-top: 12px; font-size: 16px; line-height: 1.85; word-break: keep-all; overflow-wrap: anywhere; }
+
+  .prose :global(> * + *) { margin-top: 18px; }
+  .prose :global(h2) { margin-top: 56px; font-size: 24px; font-weight: 800; line-height: 1.4; letter-spacing: -0.02em; color: var(--ink); }
+  .prose :global(h3) { margin-top: 36px; font-size: 19px; font-weight: 800; line-height: 1.5; letter-spacing: -0.015em; color: var(--ink); }
+  .prose :global(h4) { margin-top: 28px; font-size: 16px; font-weight: 800; color: var(--ink); }
+  .prose :global(h2 + *), .prose :global(h3 + *), .prose :global(h4 + *) { margin-top: 12px; }
+  .prose :global(p) { color: var(--body); }
+  /* 본문 속 링크 = 옅은 밑줄 (포폴 링크 ④) */
+  .prose :global(a) { text-decoration: underline; text-decoration-color: var(--uline); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  .prose :global(a:hover) { text-decoration-color: var(--ink); }
+  .prose :global(ul), .prose :global(ol) { padding-left: 22px; }
+  .prose :global(li + li) { margin-top: 6px; }
+  .prose :global(li > ul), .prose :global(li > ol) { margin-top: 6px; }
+  .prose :global(li::marker) { color: var(--faint); }
+  /* 인용 = 콜아웃 박스 (포폴 프로젝트 개요 상자) */
+  .prose :global(blockquote) { border: 1px solid var(--line); border-radius: 12px; padding: 16px 22px; color: var(--body); }
+  .prose :global(blockquote > * + *) { margin-top: 8px; }
+  .prose :global(hr) { border: 0; border-top: 1px solid var(--line); margin-block: 40px; }
+  .prose :global(img) { display: block; margin-inline: auto; border: 1px solid var(--line); border-radius: 10px; }
+  .prose :global(code) { font-family: var(--mono); font-size: 0.86em; }
+  .prose :global(:not(pre) > code) { background: var(--bg2); border-radius: 4px; padding: 1.5px 6px; color: var(--ink); }
+  .prose :global(pre) { padding: 14px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--code-bg) !important; overflow-x: auto; font-size: 13.5px; line-height: 1.65; }
+  .prose :global(pre code) { font-size: inherit; }
+  /* 표 = 칸마다 테두리, 머리줄 회색 (포폴 표) */
+  .prose :global(table) { border-collapse: collapse; width: 100%; font-size: 13.5px; display: block; overflow-x: auto; }
+  .prose :global(th), .prose :global(td) { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; overflow-wrap: normal; word-break: keep-all; min-width: 64px; }
+  .prose :global(th) { background: var(--bg2); font-weight: 700; font-size: 12.5px; white-space: nowrap; color: var(--ink); }
+
+  .series-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 64px; }
+  .sn { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; border: 1px solid var(--line); border-radius: 12px; font-size: 14.5px; line-height: 1.5; }
+  .sn .muted { font-size: 12.5px; font-weight: 600; }
+  .sn.next { text-align: right; grid-column: 2; }
+  .sn:hover { border-color: var(--uline); }
+  @media (max-width: 600px) { .series-nav { grid-template-columns: 1fr; } .sn.next { grid-column: 1; text-align: left; } }
+  .after-links { margin-top: 28px; display: flex; gap: 24px; }
+</style>

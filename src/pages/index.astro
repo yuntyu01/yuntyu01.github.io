@@ -1,0 +1,100 @@
+---
+import Base from "../layouts/Base.astro";
+import PostItem from "../components/PostItem.astro";
+import { SITE, allPosts } from "../lib/site";
+
+const posts = await allPosts();
+const HOME_POSTS = 6;
+const shown = posts.slice(0, HOME_POSTS);
+
+// 포트폴리오 첫 화면과 같은 문구·링크
+const projects = [
+  {
+    name: "KoDeploy",
+    meta: "Solo · 기획/인프라/백엔드 100% · 2026.04 ~ 운영 중",
+    pitch: "GitHub 링크만 입력하면 빌드부터 배포까지 자동화하는 K8s 기반 멀티테넌트 PaaS",
+    stack: ["Kubernetes (kubeadm)", "Argo CD", "BuildKit", "Go", "Python", "Terraform", "Ansible"],
+    links: [
+      { label: "kodeploy.com", href: "https://kodeploy.com/" },
+      { label: "GitHub 저장소", href: "https://github.com/yuntyu01/kodeploy" },
+    ],
+  },
+  {
+    name: "Dailo",
+    meta: "Leader · 팀장/Infra 100% · 6인 팀 · 2026.01 ~ 운영 중",
+    pitch: "지역·대학 행사 정보를 모아 제공하는 서비스 - 대학 축제와 연계해 운영",
+    stack: ["AWS", "Terraform", "GitHub Actions", "Grafana"],
+    links: [
+      { label: "GitHub 저장소", href: "https://github.com/Team-Dailo/Dailo-Project" },
+      { label: "Terraform 모듈", href: "https://github.com/yuntyu01/terraform-aws-modules" },
+    ],
+  },
+];
+---
+
+<!-- 홈: ARCHIVE 제목·연락처 → 트리 하나 (● Projects 검정 → Portfolio 검정 버튼 → ○ Blog), 항목은 박스만 -->
+<Base>
+  <!-- 포폴 첫 화면과 같은 구성: 큰 제목 → 구분선 → 연락처 칸 (박스 없이 폭 전체에 고르게) -->
+  <section class="cover">
+    <h1>ARCHIVE</h1>
+    <hr class="cover-rule" />
+    <div class="contacts">
+      <div><span class="clb">GitHub</span><a class="vl" href={SITE.github}>github.com/yuntyu01</a></div>
+      <div><span class="clb">KoDeploy</span><a class="vl" href={SITE.kodeploy}>kodeploy.com</a></div>
+      <div><span class="clb">Email</span><a class="vl" href={`mailto:${SITE.email}`}>{SITE.email}</a></div>
+    </div>
+  </section>
+
+
+  <section class="tree flat first">
+    <div class="tree-head lead">
+      <h2 class="tree-title">Projects</h2>
+    </div>
+    <div class="tree-body">
+      {
+        projects.map((p) => (
+          <article class="item">
+            <h3 class="item-title">{p.name}</h3>
+            <p class="item-meta">{p.meta}</p>
+            <p class="pitch">{p.pitch}</p>
+            <div class="plinks">
+              {p.links.map((l) => (
+                <a class="plink" href={l.href}>
+                  {l.label}
+                </a>
+              ))}
+            </div>
+            <div class="tags">
+              {p.stack.map((s) => (
+                <span class="tag">{s}</span>
+              ))}
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+    <!-- 포트폴리오 = 페이지에서 유일한 검정 블록 (포폴의 '데모 영상 보기'와 같은 모양) -->
+    <a class="dark-cta" href={SITE.portfolio}>
+      <span class="dark-cta-icon" aria-hidden="true">→</span>
+      <span class="dark-cta-tx">
+        <b>PORTFOLIO</b>
+        <small>KoDeploy · Dailo 프로젝트와 주요 작업 사례</small>
+      </span>
+    </a>
+
+    <div class="tree-head next">
+      <h2 class="tree-title">Blog</h2>
+      <span class="tree-sub">{posts.length}편</span>
+    </div>
+    <div class="tree-body">
+      {shown.map((p) => <PostItem post={p} />)}
+    </div>
+    {posts.length > HOME_POSTS && <a class="post-link" href="/posts/">전체 글 보기</a>}
+  </section>
+</Base>
+
+<style>
+  .item .item-meta { margin-top: 2px; }
+  .item .plinks { margin-top: 10px; }
+</style>
