@@ -1,0 +1,139 @@
+---
+// 블로그 카테고리 줄 - 왼쪽에 큰 카테고리(크게 · 고른 것만 진하게, 나머지 회색),
+// 큰 카테고리를 고르면 같은 줄 오른쪽 끝에 그 세부 카테고리가 작게 나온다.
+// 누르면 target 안의 글(PostItem의 data-cat / data-sub)을 그 자리에서 걸러 보여 준다.
+//   target  걸러 볼 글 목록을 감싼 요소 (CSS 선택자)
+//   limit   한 번에 보여 줄 글 수 (0 = 전부). 넘치면 more 링크를 띄운다
+//   more    "전체 글 보기" 링크 (글 목록 페이지로, 고른 카테고리를 ?c= 로 넘김)
+//   count   글 수를 적어 둔 요소 - 고른 카테고리의 글 수로 바꿔 쓴다
+//   syncUrl 고른 카테고리를 주소의 ?c= 에 남긴다 (글 목록 페이지 - 공유·뒤로 가기용)
+// 같은 페이지의 다른 곳(홈 목차)은 'bcats:set' 이벤트로 카테고리를 바꾸고, 'bcats:change'로 알림을 받는다.
+import type { Category } from "../lib/site";
+
+interface Props {
+  id?: string;
+  cats: Category[];
+  target: string;
+  limit?: number;
+  more?: string;
+  count?: string;
+  syncUrl?: boolean;
+}
+const { id, cats, target, limit = 0, more, count, syncUrl = false } = Astro.props;
+---
+
+<div
+  class="bcats"
+  id={id}
+  data-bcats
+  data-target={target}
+  data-limit={limit}
+  data-more={more}
+  data-count={count}
+  data-url={syncUrl ? "1" : undefined}
+>
+  <div class="bcats-main" role="group" aria-label="카테고리">
+    <button type="button" class="bcat on" data-cat="" aria-pressed="true">전체</button>
+    {
+      cats.map((c) => (
+        <button type="button" class="bcat" data-cat={c.name} aria-pressed="false">
+          {c.label}
+        </button>
+      ))
+    }
+  </div>
+  {
+    cats
+      .filter((c) => c.subs.length > 0)
+      .map((c) => (
+        <div class="bsubs" data-for={c.name} role="group" aria-label={`${c.label} 세부 카테고리`} hidden>
+          <button type="button" class="bsub on" data-sub="" aria-pressed="true">
+            전체<span>{c.count}</span>
+          </button>
+          {c.subs.map((s) => (
+            <button type="button" class="bsub" data-sub={s.name} aria-pressed="false">
+              {s.label}
+              <span>{s.count}</span>
+            </button>
+          ))}
+        </div>
+      ))
+  }
+</div>
+
+<script>
+  type Pick = { cat: string; sub: string };
+  const nfc = (s: string) => (s.normalize ? s.normalize("NFC") : s);
+  const sel = (attr: string, v: string) => `[${attr}="${CSS.escape(v)}"]`;
+
+  document.querySelectorAll<HTMLElement>("[data-bcats]").forEach((root) => {
+    const list = document.querySelector<HTMLElement>(root.dataset.target || "");
+    if (!list) return;
+    const items = [...list.querySelectorAll<HTMLElement>("[data-cat]")];
+    const groups = [...list.querySelectorAll<HTMLElement>("[data-group]")];
+    const limit = Number(root.dataset.limit || 0);
+    const more = root.dataset.more ? document.querySelector<HTMLAnchorElement>(root.dataset.more) : null;
+    const countEl = root.dataset.count ? document.querySelector<HTMLElement>(root.dataset.count) : null;
+    const syncUrl = root.dataset.url === "1";
+    const has = (p: Pick) =>
+      (!p.cat || !!root.querySelector(".bcat" + sel("data-cat", p.cat))) &&
+      (!p.sub || !!root.querySelector(".bsubs" + sel("data-for", p.cat) + " .bsub" + sel("data-sub", p.sub)));
+
+    const apply = ({ cat, sub }: Pick) => {
+      if (!has({ cat, sub })) { cat = ""; sub = ""; }
+      root.querySelectorAll<HTMLButtonElement>(".bcat").forEach((b) => {
+        const on = b.dataset.cat === cat;
+        b.classList.toggle("on", on);
+        b.setAttribute("aria-pressed", String(on));
+      });
+      root.querySelectorAll<HTMLElement>(".bsubs").forEach((g) => {
+        g.hidden = g.dataset.for !== cat;
+        g.querySelectorAll<HTMLButtonElement>(".bsub").forEach((b) => {
+          const on = g.dataset.for === cat ? b.dataset.sub === sub : b.dataset.sub === "";
+          b.classList.toggle("on", on);
+          b.setAttribute("aria-pressed", String(on));
+        });
+      });
+      let matched = 0, shown = 0;
+      for (const it of items) {
+        const ok = (!cat || it.dataset.cat === cat) && (!sub || it.dataset.sub === sub);
+        if (ok) matched++;
+        const show = ok && (!limit || shown < limit);
+        if (show) shown++;
+        it.hidden = !show;
+      }
+      // 연도 묶음 등: 남은 글이 없으면 묶음째 숨기고, 묶음의 글 수도 고쳐 쓴다
+      for (const g of groups) {
+        const n = g.querySelectorAll("[data-cat]:not([hidden])").length;
+        g.hidden = n === 0;
+        const c = g.querySelector<HTMLElement>("[data-group-count]");
+        if (c) c.textContent = n + "편";
+      }
+      if (countEl) countEl.textContent = matched + "편";
+      if (more) {
+        more.hidden = !(limit && matched > limit);
+        more.href = "/posts/" + (cat ? "?c=" + encodeURIComponent(cat + (sub ? "/" + sub : "")) : "");
+      }
+      if (syncUrl) {
+        const u = new URL(location.href);
+        if (cat) u.searchParams.set("c", cat + (sub ? "/" + sub : ""));
+        else u.searchParams.delete("c");
+        history.replaceState(history.state, "", u);
+      }
+      root.dispatchEvent(new CustomEvent("bcats:change", { detail: { cat, sub }, bubbles: true }));
+    };
+
+    root.addEventListener("click", (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>(".bcat, .bsub");
+      if (!b) return;
+      if (b.classList.contains("bcat")) apply({ cat: b.dataset.cat || "", sub: "" });
+      else apply({ cat: b.closest<HTMLElement>(".bsubs")?.dataset.for || "", sub: b.dataset.sub || "" });
+    });
+    root.addEventListener("bcats:set", (e) => apply((e as CustomEvent<Pick>).detail));
+
+    // 처음 상태 - 글 목록 페이지는 주소의 ?c=큰/세부 를 따른다
+    const c = syncUrl ? new URL(location.href).searchParams.get("c") : null;
+    const [cat = "", sub = ""] = c ? nfc(c).split("/") : [];
+    apply({ cat, sub });
+  });
+</script>

@@ -1,7 +1,7 @@
 ---
 import { render } from "astro:content";
 import Base from "../../layouts/Base.astro";
-import { allPosts, fmtDate, readingMinutes, SITE } from "../../lib/site";
+import { allPosts, fmtDate, readingMinutes, SITE, categoryOf, categoryPath } from "../../lib/site";
 
 export async function getStaticPaths() {
   const posts = await allPosts();
@@ -12,6 +12,10 @@ const { post, posts } = Astro.props;
 const { Content, headings } = await render(post);
 const d = post.data;
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+// 카테고리 경로 (폴더) - 누르면 그 카테고리로 걸러진 글 목록
+const { cat, sub } = categoryOf(post);
+const catPath = categoryPath(post);
+const catHref = `/posts/?c=${encodeURIComponent(cat + (sub ? `/${sub}` : ""))}`;
 
 // 같은 시리즈 안에서 앞뒤 글 (오래된 → 최신 순서)
 const series = d.series
@@ -25,10 +29,18 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
 <Base title={d.title} description={d.description} wide>
   <div class="layout">
     <article>
-      <!-- 깃 트리: 글 제목 ● (검정) → 큰 절·작은 절 ○ (회색 고리), 포폴의 프로젝트 ● · 사례 ○ 와 같은 규칙 -->
+      <!-- 깃 트리: 글 제목 ● (검정) → 큰 절(1. 2. …) ○ (회색 고리), 작은 절(2.1 …)은 원 없이. 포폴의 프로젝트 ● · 사례 ○ 와 같은 규칙 -->
       <div class="post-tree">
       <header class="post-head">
-        {d.series && <p class="series">{d.series} 시리즈 · {idx + 1}/{series.length}</p>}
+        {
+          (catPath || d.series) && (
+            <p class="series">
+              {catPath && <a href={catHref}>{catPath}</a>}
+              {catPath && d.series && " · "}
+              {d.series && `${d.series} 시리즈 ${idx + 1}/${series.length}`}
+            </p>
+          )
+        }
         <h1>{d.title}</h1>
         <p class="meta">
           <time datetime={d.date.toISOString()}>{fmtDate(d.date)}</time>
@@ -151,8 +163,10 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
   }
   @media (max-width: 945px) { .layout { padding-left: 0; } }
 
-  .post-head { padding-top: 56px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+  .post-head { padding-top: 40px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
   .series { font-size: 13px; font-weight: 700; color: var(--faint); margin-bottom: 10px; }
+  .series a { color: var(--faint); font-weight: 700; }
+  .series a:hover { color: var(--ink); text-decoration: underline; text-decoration-color: var(--uline); text-underline-offset: 3px; }
   h1 { font-size: clamp(26px, 5vw, 34px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.3; color: var(--ink); word-break: keep-all; }
   .meta { margin-top: 14px; font-size: 13px; color: var(--faint); display: flex; flex-wrap: wrap; row-gap: 4px; }
   .meta > :global(* + *)::before { content: "·"; margin-inline: 7px; color: var(--uline); display: inline-block; }
@@ -169,7 +183,7 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
   .toc-inline a { color: var(--body); font-weight: 500; }
   @media (max-width: 1199px) { .toc-inline { display: block; } }
 
-  .toc { position: sticky; top: 32px; align-self: start; margin-top: 56px; max-height: calc(100vh - 64px); overflow: auto; font-size: 13px; }
+  .toc { position: sticky; top: 32px; align-self: start; margin-top: 40px; max-height: calc(100vh - 64px); overflow: auto; font-size: 13px; }
   .toc-title { font-size: 12px; font-weight: 700; color: var(--faint); margin-bottom: 10px; }
   .toc ul { list-style: none; border-left: 2px solid var(--line); }
   .toc li { line-height: 1.5; }
@@ -180,7 +194,7 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
 
   /* ── 트리 레일 ─────────────────────────────────
      세로선 가운데 = -33px. 노드는 크기의 절반만큼 왼쪽으로 빼서 선 위에 올린다.
-     글 제목 ● 12px 검정 / 큰 절 ○ 10px / 작은 절 ○ 8px (회색 고리). 짝수 크기 + 정수 좌표라 선 가운데에 정확히 */
+     글 제목 ● 12px 검정 / 큰 절 ○ 10px (회색 고리) / 작은 절은 원 없음. 짝수 크기 + 정수 좌표라 선 가운데에 정확히 */
   .post-tree { position: relative; }
   .post-tree::before { content: ""; position: absolute; left: -34px; top: var(--rail-top, 90px); bottom: 0; border-left: 2px solid var(--rail); }
   h1, .prose :global(h2), .prose :global(h3) { position: relative; }
@@ -192,17 +206,12 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
     content: ""; position: absolute; left: -38px; top: 0.7em; transform: translateY(-50%);
     width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--node); background: var(--bg);
   }
-  .prose :global(h3)::after {
-    content: ""; position: absolute; left: -37px; top: 0.75em; transform: translateY(-50%);
-    width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--node); background: var(--bg);
-  }
   /* 왼쪽 여백이 모자라면 트리를 안쪽으로 (포폴 슬림 모드와 같은 방식) — 선 가운데 = 안쪽 26px 기준 -20px */
   @media (max-width: 945px) {
     .post-tree { padding-left: 26px; }
     .post-tree::before { left: 5px; }
     h1::after { left: -25px; width: 10px; height: 10px; }
     .prose :global(h2)::after { left: -24px; width: 8px; height: 8px; }
-    .prose :global(h3)::after { left: -23px; width: 6px; height: 6px; }
   }
 
   .prose { padding-top: 12px; font-size: 16px; line-height: 1.85; word-break: keep-all; overflow-wrap: anywhere; }
