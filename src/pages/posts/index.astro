@@ -1,9 +1,11 @@
 ---
 import Base from "../../layouts/Base.astro";
 import PostItem from "../../components/PostItem.astro";
-import { SITE, allPosts } from "../../lib/site";
+import BlogCats from "../../components/BlogCats.astro";
+import { SITE, allPosts, categories } from "../../lib/site";
 
 const posts = await allPosts();
+const cats = categories(posts);
 // 연도별 묶음 (최신 연도 먼저) — 연도 = 트리의 ●
 const years = [...new Set(posts.map((p) => p.data.date.getFullYear()))];
 ---
@@ -11,17 +13,20 @@ const years = [...new Set(posts.map((p) => p.data.date.getFullYear()))];
 <Base title="글" description="KoDeploy를 만들고 운영하며 겪은 장애·설계 기록">
   <section class="cover">
     <h1>POSTS</h1>
-    <p class="who">{SITE.name} · 장애와 설계 기록 <span class="muted">· {posts.length}편</span></p>
+    <p class="who">{SITE.name} · 장애와 설계 기록 <span class="muted">· <span id="posts-count">{posts.length}편</span></span></p>
+    <!-- 카테고리 줄: 고르면 아래 연도 묶음을 걸러 보여 준다. 고른 값은 주소 ?c= 에 남는다 (홈에서 넘어올 때도 이어짐) -->
+    <BlogCats cats={cats} target="#post-list" count="#posts-count" syncUrl />
   </section>
 
+  <div id="post-list">
   {
     years.map((y) => {
       const list = posts.filter((p) => p.data.date.getFullYear() === y);
       return (
-        <section class="tree">
+        <section class="tree" data-group>
           <div class="tree-head">
             <h2 class="tree-title">{y}</h2>
-            <span class="tree-sub">{list.length}편</span>
+            <span class="tree-sub" data-group-count>{list.length}편</span>
           </div>
           <div class="tree-body">
             {list.map((p) => (
@@ -32,4 +37,5 @@ const years = [...new Set(posts.map((p) => p.data.date.getFullYear()))];
       );
     })
   }
+  </div>
 </Base>

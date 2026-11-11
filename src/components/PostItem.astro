@@ -1,18 +1,35 @@
 ---
-// 글 한 편 = 박스 하나 (박스 전체가 링크). 맨 위 날짜 줄 → 그 아래 왼쪽 썸네일 · 오른쪽 제목이 같은 줄에서 시작
-import { fmtDate, type Post } from "../lib/site";
+// 글 한 편 = 박스 하나 (박스 전체가 링크). 맨 위 날짜·카테고리 줄 → 그 아래 왼쪽 썸네일 · 오른쪽 제목이 같은 줄에서 시작
+// data-cat / data-sub = 카테고리 줄(BlogCats)로 걸러 볼 때 쓰는 폴더 이름
+import { fmtDate, categoryOf, catLabel, type Post } from "../lib/site";
 
 interface Props {
   post: Post;
+  hidden?: boolean;
 }
-const { post } = Astro.props;
+const { post, hidden = false } = Astro.props;
 const d = post.data;
+const { cat, sub } = categoryOf(post);
 ---
 
-<a class:list={["item", "post-item", { "has-thumb": d.thumbnail }]} href={`/posts/${post.id}/`}>
+<a
+  class:list={["item", "post-item", { "has-thumb": d.thumbnail }]}
+  href={`/posts/${post.id}/`}
+  data-cat={cat}
+  data-sub={sub}
+  hidden={hidden}
+>
   <p class="item-meta">
     <time datetime={d.date.toISOString()}>{fmtDate(d.date)}</time>
-    {d.series && <span> · <span class="series">{d.series}</span></span>}
+    {
+      cat && (
+        <span>
+          {" · "}
+          <span class="series">{catLabel(cat)}</span>
+          {sub && ` › ${catLabel(sub)}`}
+        </span>
+      )
+    }
   </p>
   {d.thumbnail && <img class="thumb" src={d.thumbnail} alt="" loading="lazy" decoding="async" />}
   <div class="post-body">

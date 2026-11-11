@@ -1,11 +1,13 @@
 ---
 import Base from "../layouts/Base.astro";
 import PostItem from "../components/PostItem.astro";
-import { SITE, allPosts } from "../lib/site";
+import BlogCats from "../components/BlogCats.astro";
+import { SITE, allPosts, categories } from "../lib/site";
 
 const posts = await allPosts();
-const HOME_POSTS = 6;
-const shown = posts.slice(0, HOME_POSTS);
+const HOME_POSTS = 6; // 한 번에 보여 줄 글 수 (카테고리를 골라도 같다)
+const cats = categories(posts);
+const slug = (name: string) => "project-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
 // 포트폴리오 첫 화면과 같은 문구·링크
 const projects = [
@@ -32,8 +34,11 @@ const projects = [
 ];
 ---
 
-<!-- 홈: ARCHIVE 제목·연락처 → 트리 하나 (● Projects 검정 → Portfolio 검정 버튼 → ○ Blog), 항목은 박스만 -->
+<!-- 홈: ARCHIVE 제목·연락처 → 트리 하나 (● Projects 검정 → Portfolio 검정 버튼 → ○ Blog), 항목은 박스만
+     Blog: 카테고리 줄(왼쪽 큰 카테고리 · 오른쪽 끝 세부)로 그 자리에서 걸러 본다
+     오른쪽: 화면을 따라 내려오는 목차 (넓은 화면에서만) -->
 <Base>
+  <div class="home">
   <!-- 포폴 첫 화면과 같은 구성: 큰 제목 → 구분선 → 연락처 칸 (박스 없이 폭 전체에 고르게) -->
   <section class="cover">
     <h1>ARCHIVE</h1>
@@ -47,13 +52,13 @@ const projects = [
 
 
   <section class="tree flat first">
-    <div class="tree-head lead">
-      <h2 class="tree-title">Projects</h2>
+    <div class="tree-head lead" id="projects">
+      <h2 class="tree-title">PROJECTS</h2>
     </div>
     <div class="tree-body">
       {
         projects.map((p) => (
-          <article class="item">
+          <article class="item" id={slug(p.name)}>
             <h3 class="item-title">{p.name}</h3>
             <p class="item-meta">{p.meta}</p>
             <p class="pitch">{p.pitch}</p>
@@ -75,7 +80,7 @@ const projects = [
     </div>
 
     <!-- 포트폴리오 = 페이지에서 유일한 검정 블록 (포폴의 '데모 영상 보기'와 같은 모양) -->
-    <a class="dark-cta" href={SITE.portfolio}>
+    <a class="dark-cta" id="portfolio" href={SITE.portfolio}>
       <span class="dark-cta-icon" aria-hidden="true">→</span>
       <span class="dark-cta-tx">
         <b>PORTFOLIO</b>
@@ -83,16 +88,80 @@ const projects = [
       </span>
     </a>
 
-    <div class="tree-head next">
-      <h2 class="tree-title">Blog</h2>
-      <span class="tree-sub">{posts.length}편</span>
+    <div class="tree-head next" id="blog">
+      <h2 class="tree-title">BLOG</h2>
+      <span class="tree-sub" id="blog-count">{posts.length}편</span>
     </div>
-    <div class="tree-body">
-      {shown.map((p) => <PostItem post={p} />)}
+    <BlogCats id="blog-cats" cats={cats} target="#blog-list" limit={HOME_POSTS} more="#blog-more" count="#blog-count" />
+    <div class="tree-body" id="blog-list">
+      {posts.map((p, i) => <PostItem post={p} hidden={i >= HOME_POSTS} />)}
     </div>
-    {posts.length > HOME_POSTS && <a class="post-link" href="/posts/">전체 글 보기</a>}
+    <a class="post-link" id="blog-more" href="/posts/" hidden={posts.length <= HOME_POSTS}>전체 글 보기</a>
   </section>
+
+  <!-- 오른쪽 목차 - 화면을 따라 내려오고, 지금 보고 있는 곳을 진하게. Blog 아래 카테고리를 누르면 그 카테고리로 걸러 준다 -->
+  <aside class="home-toc" aria-label="목차">
+    <nav>
+      <p class="toc-title">목차</p>
+      <ul>
+        <li>
+          <a href="#projects" data-spy="projects">PROJECTS</a>
+          <ul>
+            {projects.map((p) => (
+              <li><a href={`#${slug(p.name)}`} data-spy={slug(p.name)}>{p.name}</a></li>
+            ))}
+          </ul>
+        </li>
+        <li><a href="#portfolio" data-spy="portfolio">PORTFOLIO</a></li>
+        <li>
+          <a href="#blog" data-spy="blog" data-blogcat="">BLOG</a>
+          {cats.length > 0 && (
+            <ul>
+              {cats.map((c) => (
+                <li><a href="#blog" data-blogcat={c.name}>{c.label}</a></li>
+              ))}
+            </ul>
+          )}
+        </li>
+      </ul>
+    </nav>
+  </aside>
+  </div>
 </Base>
+
+<script>
+  // 오른쪽 목차: 지금 보고 있는 곳을 진하게 (Blog에서는 고른 카테고리를)
+  const toc = document.querySelector<HTMLElement>(".home-toc");
+  const bcats = document.getElementById("blog-cats");
+  if (toc) {
+    const spy = [...toc.querySelectorAll<HTMLAnchorElement>("a[data-spy]")];
+    const targets = spy.map((a) => document.getElementById(a.dataset.spy!)).filter(Boolean) as HTMLElement[];
+    const catLinks = [...toc.querySelectorAll<HTMLAnchorElement>("a[data-blogcat]")];
+    let blogCat = "";
+    const update = () => {
+      let cur = targets[0];
+      for (const t of targets) if (t.getBoundingClientRect().top < 140) cur = t;
+      // 맨 아래까지 내렸으면 마지막 절 (짧아서 위로 못 올라오는 경우)
+      if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) cur = targets[targets.length - 1];
+      const inBlog = cur?.id === "blog";
+      spy.forEach((a) => a.classList.toggle("on", a.dataset.spy === cur?.id && !(inBlog && blogCat)));
+      catLinks.forEach((a) => a.dataset.blogcat && a.classList.toggle("on", inBlog && a.dataset.blogcat === blogCat));
+    };
+    // Blog 아래 카테고리 · Blog 자체를 누르면 그 카테고리(Blog = 전체)로 거르고 Blog로 내려간다
+    catLinks.forEach((a) =>
+      a.addEventListener("click", () => {
+        bcats?.dispatchEvent(new CustomEvent("bcats:set", { detail: { cat: a.dataset.blogcat || "", sub: "" } }));
+      }),
+    );
+    document.addEventListener("bcats:change", (e) => {
+      blogCat = (e as CustomEvent<{ cat: string }>).detail.cat;
+      update();
+    });
+    addEventListener("scroll", update, { passive: true });
+    addEventListener("resize", update);
+    update();
+  }
+</script>
 
 <style>
   .item .item-meta { margin-top: 2px; }

@@ -11,12 +11,23 @@ const { title, description = SITE.description, wide = false } = Astro.props;
 const pageTitle = title ? `${title} · ${SITE.name}` : `${SITE.name} · ${SITE.role}`;
 const path = Astro.url.pathname;
 const canonical = new URL(path, Astro.site);
+const inPosts = path.startsWith("/posts/");
 ---
 
 <!doctype html>
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
+    <!-- 테마는 화면을 그리기 전에 정한다 (깜빡임 방지) - 직접 고른 값 > 시스템 설정.
+         저장 키는 포트폴리오와 같다 (같은 주소라 한쪽에서 바꾸면 다른 쪽도 따라감) -->
+    <script is:inline>
+      (function () {
+        var t;
+        try { t = localStorage.getItem("portfolio-theme"); } catch (e) {}
+        if (t !== "light" && t !== "dark") t = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", t);
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
@@ -33,6 +44,17 @@ const canonical = new URL(path, Astro.site);
     />
   </head>
   <body>
+    <header class:list={["wrap sitenav", { wide }]}>
+      <a class="brand" href="/">{SITE.name}</a>
+      <nav class="sitelinks" aria-label="사이트">
+        <a href={SITE.portfolio}>Portfolio</a>
+        <a href="/posts/" aria-current={inPosts ? "page" : undefined}>Blog</a>
+        <button class="theme-btn" id="themeBtn" type="button" aria-label="다크 모드로 전환" title="다크 모드로 전환">
+          <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"></path></svg>
+          <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"></path></svg>
+        </button>
+      </nav>
+    </header>
     <main class:list={["wrap", { wide }]}>
       <slot />
     </main>
@@ -43,5 +65,29 @@ const canonical = new URL(path, Astro.site);
         <a href="/rss.xml">RSS</a>
       </div>
     </footer>
+    <script is:inline>
+      // 라이트/다크 전환 - 고른 값은 기억, 고르기 전에는 시스템 설정을 따라가고, 다른 탭(포트폴리오 등)과 맞춘다
+      (function () {
+        var KEY = "portfolio-theme", root = document.documentElement, btn = document.getElementById("themeBtn");
+        var mq = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
+        function stored() { try { var t = localStorage.getItem(KEY); return t === "light" || t === "dark" ? t : null; } catch (e) { return null; } }
+        function apply(t) {
+          root.setAttribute("data-theme", t);
+          var label = t === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환";
+          btn.setAttribute("aria-label", label); btn.title = label;
+        }
+        apply(root.getAttribute("data-theme") === "dark" ? "dark" : "light");
+        btn.addEventListener("click", function () {
+          var t = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+          try { localStorage.setItem(KEY, t); } catch (e) {}
+          apply(t);
+        });
+        if (mq) {
+          var follow = function (e) { if (!stored()) apply(e.matches ? "dark" : "light"); };
+          if (mq.addEventListener) mq.addEventListener("change", follow); else if (mq.addListener) mq.addListener(follow);
+        }
+        addEventListener("storage", function (e) { if (e.key === KEY) apply(stored() || (mq && mq.matches ? "dark" : "light")); });
+      })();
+    </script>
   </body>
 </html>
