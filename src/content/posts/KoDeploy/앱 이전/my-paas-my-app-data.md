@@ -58,7 +58,7 @@ aws ssm start-session --target <EC2_INSTANCE_ID> \
 mysqldump -h localhost -P 3307 -u dailo -p ... dailo | gzip > dailo.sql.gz
 # ERROR 2002: Can't connect to local MySQL server through socket '/var/lib/mysql/mysql.sock'
 mysqldump -h 127.0.0.1 -P 3307 -u dailo -p ... dailo | gzip > dailo.sql.gz
-# 성공 — dailo.sql.gz 239K
+# 성공 - dailo.sql.gz 239K
 ```
 
 ![](/images/posts/my-paas-my-app-data/03.png)
@@ -91,7 +91,7 @@ mysqldump -h 127.0.0.1 -P 3307 -u dailo -p \
 
 - `-single-transaction` - 정해진 스냅샷 기준 트랜잭션으로 떠서 **테이블 잠금 없이** 일관성 확보 (운영 중 덤프해도 쓰기 안 막음)
 - `-no-tablespaces` - 테이블스페이스 메타데이터 제외 → `PROCESS` 권한 없는 제한 유저로도 덤프되며 우리는 데이터가 어느 디스크의 어느 파일에 담겨있는지 보다는 데이터가 중점이기에 필요 없는 것을 덜 수 있다
-- `-default-character-set=utf8mb4` — 한글·이모지 안 깨지게
+- `-default-character-set=utf8mb4` - 한글·이모지 안 깨지게
 - `dailo` (단일 db명, `-databases` 아님) - 덤프에 `CREATE DATABASE`가 안 들어가 → 대상 DB 이름에 구애 없이 맞춰서 복원하여 호환성이 좀 더 좋음
 
 ---

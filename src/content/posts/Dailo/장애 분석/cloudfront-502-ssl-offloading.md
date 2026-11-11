@@ -1,5 +1,5 @@
 ---
-title: "HTTPS가 항상 정답은 아니었다 – CloudFront 502 장애 분석"
+title: "HTTPS가 항상 정답은 아니었다 - CloudFront 502 장애 분석"
 date: "2026-01-24"
 description: "CloudFront 뒤 ALB 구간의 502를 openssl로 추적해 SNI 불일치를 찾고, SSL Offloading으로 풀었습니다."
 tags: ["AWS", "CloudFront", "TLS"]
@@ -175,7 +175,7 @@ SSL Offloading은 CloudFront가 암호화된 트래픽을 복호화한 뒤, **AW
 
 테스트 데이터를 통해 **SSL Offloading이 단순히 에러 해결책일 뿐만 아니라, 서비스 응답 속도를 평균 15.7ms → 5.1ms로 성능을 약 67% 높여주는 최적화 기법**임을 확인하고 코드에 적용했습니다
 
-※ 본 테스트는 동일 ALB에 대한 HTTP/HTTPS 직접 요청 비교이며, 실제 CloudFront–Origin 통신에서는 연결을 재사용할 수 있으므로 이 차이가 모든 요청에 동일하게 적용되는 것은 아닙니다.
+※ 본 테스트는 동일 ALB에 대한 HTTP/HTTPS 직접 요청 비교이며, 실제 CloudFront-Origin 통신에서는 연결을 재사용할 수 있으므로 이 차이가 모든 요청에 동일하게 적용되는 것은 아닙니다.
 
 **Terraform 코드수정**
 
@@ -222,7 +222,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 
 ALB가 HTTP(80) 포트를 열어두더라도, **아무나 접속할 수 없도록** 보안 그룹에서 `0.0.0.0/0`(전체 허용)을 제거하고, **오직 CloudFront의 IP 대역에서 오는 트래픽만 허용**하도록 설정했습니다. AWS는 이를 위해 `Managed Prefix List`를 활용했습니다
 
-** Terraform 적용 코드 **
+**Terraform 적용 코드**
 
 ```hcl
 # 1. AWS가 관리하는 CloudFront IP 리스트 데이터 가져오기

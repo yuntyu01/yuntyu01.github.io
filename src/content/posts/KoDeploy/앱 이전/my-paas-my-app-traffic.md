@@ -58,7 +58,7 @@ thumbnail: "/images/thumbs/my-paas-my-app-traffic.webp"
 고객이 자기 도메인(CNAME 한 줄)으로 우리 SaaS를 쓰게 해주고, 인증서 발급·갱신·트래픽 보안은 Cloudflare가 알아서 해주는 제품
 > 
 
-딱 봐도 정답은 정해져있다 **CF for SaaS**로 하기로 했다 ****
+딱 봐도 정답은 정해져있다 **CF for SaaS**로 하기로 했다
 
 ---
 
@@ -85,12 +85,12 @@ thumbnail: "/images/thumbs/my-paas-my-app-traffic.webp"
 kodeploy.com zone(CF)에 `test.dailoapp.com`을 custom hostname으로 등록한다(API)
 이게 있어야 CF가 이 트래픽을 받았을 때 "KoDeploy SaaS 거구나" 하고 fallback origin(`origin.kodeploy.com`)으로 넘기고, cert도 발급해준다.
 
-**② Route53 — CNAME 추가**
+**② Route53 - CNAME 추가**
 
 Route53의 `dailoapp.com` 존에`test.dailoapp.com CNAME → origin.kodeploy.com`을 넣는다 
 트래픽을 CF로 보내는 레코드이자 내 DNS에 레코드를 넣을 수 있다는 것이 도메인 소유 증명이기에 SaaS의 hostname이 활성화된다.
 
-**③ Envoy — 기존 상태 그대로**
+**③ Envoy - 기존 상태 그대로**
 mTLS 사용 상태로 (enforce) HTTPRoute hostnames에 `test.dailoapp.com`만 주입해서 라우팅되게 했다.
 
 근데 여기서 생각해야 할 부분이 있다 **Cloudflare for SaaS** 커스텀 도메인 트래픽이 **Origin의 mTLS를 통과할 수 있는가**
@@ -133,8 +133,8 @@ $ curl -v https://test.dailoapp.com/healthz
 
 ```yaml
 t0  DNS    origin.kodeploy.com → NLB IP   ← 연결 전. 주소 찾기
-t1  TCP    그 IP:443 접속                  ← 이름 안 실림 (L3–4)
-t2  TLS    ClientHello: SNI=(모름)        ← 이 시점에 존재하는 유일한 이름 (L5–6)
+t1  TCP    그 IP:443 접속                  ← 이름 안 실림 (L3-4)
+t2  TLS    ClientHello: SNI=(모름)        ← 이 시점에 존재하는 유일한 이름 (L5-6)
 t3  ★     mTLS 판정 "client cert 내놔"    ← enforce면 여기서 생사 결정
 ────────── 핸드셰이크 끝 ──────────
 t5  HTTP   Host: test.dailoapp.com        ← mtls를 안 할 시 나왔던 값
@@ -150,8 +150,8 @@ mTLS가 적용된 상태에서 cert가 없으면 **연결은 t3에서 끝나고,
 | 계층 | 무엇 | 우리 origin lock |
 | --- | --- | --- |
 | L3 | IP | 레이어 A - CF IP allowlist |
-| L4 | TCP | — |
-| L5–6 (TLS) | 인증서·SNI·mTLS | 레이어 B - origin mTLS (t3) |
+| L4 | TCP | - |
+| L5-6 (TLS) | 인증서·SNI·mTLS | 레이어 B - origin mTLS (t3) |
 | L7 (HTTP) | 헤더·경로 | (우회로 쓸 헤더 검증, t5) |
 
 #### **왜 다리②에 cert가 없었나**
@@ -172,7 +172,7 @@ AOP 명단에 `origin.kodeploy.com`(fallback origin)을 추가해 보기
 | --- | --- | --- | --- |
 | `api.kodeploy.com` | O (zone 소속) | 붙음 | 통과 |
 | `test.dailoapp.com` | X (남의 도메인, 등록 불가) | 안 붙음 | **520** |
-| (`origin.kodeploy.com`을 명단에 추가) | — 요청 호스트네임으로 등장 안 함 | 매칭 자체가 없음 | 무의미 |
+| (`origin.kodeploy.com`을 명단에 추가) | - 요청 호스트네임으로 등장 안 함 | 매칭 자체가 없음 | 무의미 |
 
 #### **2. CF SaaS를 통한 커스텀 도메인 mTLS 면제**
 
@@ -206,7 +206,7 @@ SNI가 커스텀 도메인을 사용하려면 유저가 늘 때마다 갈래 목
 
 사실 AWS 때 Dailo는 CloudFront → ALB 사이를 **`X-Origin-Verify` 비밀 헤더**로 잠갔었다. CloudFront가 헤더를 붙이고 ALB가 검증하는 방식으로 mTLS와 목적이 같고, 헤더는 **L7(HTTP)**이라 위에서 본 SNI/listener 문제를 통째로 우회한다 (보안성은 mTLS가 좀 더 우위겠지만)
 
-> **HTTPS가 항상 정답은 아니었다 – CloudFront 502 장애 분석**
+> **HTTPS가 항상 정답은 아니었다 - CloudFront 502 장애 분석**
 > 
 
 mTLS에서 얻은 교훈이 있다 "zone 설정이 SaaS를 덮느냐"는 기능마다 다르다는 것. AOP(TLS)는 안 덮었다. mTLS에 대한 PTSD가 와서 Cloudflare Transform Rules(헤더 추가, HTTP)도 SaaS에 적용되는지 검증해봤다
@@ -240,7 +240,7 @@ AOP(TLS)와 달리 Transform Rules(HTTP)는 SaaS를 덮었다
 
 ---
 
-## 4. 커스텀 도메인 기능 — 그리고 apex의 벽
+## 4. 커스텀 도메인 기능 - 그리고 apex의 벽
 
 origin lock을 헤더로 풀었으니, 이제 유저 커스텀 도메인 기능을 구현했다. CF for SaaS custom hostname을 만들고, Envoy HTTPRoute의 hostnames에 주입하는 방식이다
 
@@ -276,7 +276,7 @@ The hostname is using Cloudflare and cannot be activated with TXT/HTTP validatio
 TXT로 소유권을 증명하면, CF가 그걸 보고 "아 이 도메인은 KoDeploy zone 거구나" 하고 트래픽을 이어줄 수 있지 않을까. 즉 TXT가 검증뿐 아니라 식별까지 풀어줄 수 있지 않을까라는 생각을 했다.
 
 결과부터 말하면 둘 다 아니었다 
-검증조차 TXT가 필요 없었다 A 레코드를 이미 CF로 돌린 뒤라 "트래픽이 이미 CF로 오고 있으니 HTTP로 자동 검증한다"며 **TXT는 무시됐다(TXT pre-validation은 트래픽을 돌리기 **전** 사전 검증용이었다). **
+검증조차 TXT가 필요 없었다 A 레코드를 이미 CF로 돌린 뒤라 "트래픽이 이미 CF로 오고 있으니 HTTP로 자동 검증한다"며 **TXT는 무시됐다(TXT pre-validation은 트래픽을 돌리기 전 사전 검증용이었다).**
 그리고 알아보니 식별은 애초에 TXT가 풀 수 있는 문제가 아니었다. **소유권 검증은 등록 시점에 한 번 일어나는 절차고, 라우팅 식별은 트래픽이 도착하는 매 순간의 판단이다.** 
 CF는 그 순간 **외부 DNS의 TXT 따위를 조회하지 않고 내부에 등록된 명시적 연결(CNAME)만 본다.** 
 
@@ -284,7 +284,7 @@ CF는 그 순간 **외부 DNS의 TXT 따위를 조회하지 않고 내부에 등
 custom hostname으로 등록됐고 cert까지 발급됐으니까 그런데도 활성화는 1001로 거부됐다. 에러 메시지가 지목하는 건 정보의 부재가 아니라 CNAME 연결의 부재였다: "custom hostname does not CNAME to this zone." **즉 CF는 custom hostname의 장부상 매핑이 아니라 DNS 차원의 명시적 연결(CNAME)을 요구하는 것으로 보인다**
 아마 공유 anycast IP로 들어오는 임의 도메인을 장부만 믿고 라우팅하면 멀티테넌트 보안 문제가 열리기 때문일 것이다. 어쨌든 확실한 건, 검증 방식을 뭘 쓰든 결말은 1001이라는 것이었다.
 
-### Apex Proxying은 Enterprise — R2처럼 카드로 안 켜진다
+### Apex Proxying은 Enterprise - R2처럼 카드로 안 켜진다
 
 CF for SaaS가 apex를 공식 지원하는 길이 있긴 하다 **Apex Proxying**(전용 IP 할당) 근데
 
@@ -350,4 +350,4 @@ api.dailoapp.com    CNAME → origin.kodeploy.com  (proxied)
 항상 느끼는 거지만 **돈이 설계에 큰 영향을 끼치는 거 같다** 다일로는 지원금이 넉넉했기에 달에 25만원씩 쓰면서 여러가지 기능을 다 사용할 수 있었다 이중화도 할 수 있었고 읽기 전용 DB도 쓸 수 있었다 
 하지만 지원금이 끊긴 지금은 DB 메모리도 부족해서 perf_schema를 껐고, egress가 무서워서 R2를 고르고 Enterprise 벽에 막혀 mTLS를 접고 헤더검증으로 가고(사실 다른 대안을 뒤늦게 찾긴했지만) 결국 이중화도 제공하지 못 했다
 
-돈이 넉넉할 땐 정석을 골랐고, 없으니 차선을 골랐다. 다른 게 있다면 차선엔 "이래도 괜찮다"는 근거가 정석보다 많이 필요했다는 것. 242MB를 재고, 통제실험을 했던 이유다.** 제약 안에서 근거 있는 차선을 고르는 것, 그게 엔지니어링이지 않나 싶다 **
+돈이 넉넉할 땐 정석을 골랐고, 없으니 차선을 골랐다. 다른 게 있다면 차선엔 "이래도 괜찮다"는 근거가 정석보다 많이 필요했다는 것. 242MB를 재고, 통제실험을 했던 이유다. **제약 안에서 근거 있는 차선을 고르는 것, 그게 엔지니어링이지 않나 싶다**

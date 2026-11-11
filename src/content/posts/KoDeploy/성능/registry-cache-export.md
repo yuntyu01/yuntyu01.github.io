@@ -100,7 +100,7 @@ cache export 안쪽은 BuildKit이 하위 구간을 직접 찍어줘서 그대�
 | --- | --- | --- | --- |
 | 빌드 | 167.4s (164.5~169.4) | 5.0s (4.7~5.6) | 141.1s (137.7~144.4) |
 | 이미지 push | 12.7s (11.9~13.9) | 1.4s (1.3~1.6) | 15.8s (14.9~16.3) |
-| cache export | — | 2.5s (2.5~2.5) | 26.6s (25.5~27.6) |
+| cache export | - | 2.5s (2.5~2.5) | 26.6s (25.5~27.6) |
 | 총시간 | 180.1s (178.4~181.4) | 7.9s | 172.5s (169.1~174.7) |
 
 예측대로 push(15.8초)보다 export(26.6초)가 컸습니다. 다만 "몇 배"쯤 될 줄 알았는데 1.7배였으니 방향은 맞았으나 크기는 틀렸습니다. export 26.6초를 하위 구간으로 나누면 이렇습니다.
@@ -131,7 +131,7 @@ cache export (#22)                  25.9s
 └ writing cache image manifest      0.7s    장부가 가리키는 목록을 태그에 건다
 ```
 
-굳히기가 대부분 레이어 하나(13.3초)에 몰려 있습니다. push가 굳혀놓지 않은, 최종 이미지에 안 들어가는 빌드 스테이지 레이어 — 예측했던 바로 그 자리에 비용이 청구된 겁니다.
+굳히기가 대부분 레이어 하나(13.3초)에 몰려 있습니다. push가 굳혀놓지 않은, 최종 이미지에 안 들어가는 빌드 스테이지 레이어 - 예측했던 바로 그 자리에 비용이 청구된 겁니다.
 
 틀린 예측도 있었습니다. 트리에 보이듯 22개 blob이 새 데이터를 한 바이트도 안 올리면서 존재 확인만 하러 왕복하고 있었습니다.. 방금 import한 장부에 digest가 그대로 적혀 있는 blob도 예외 없이 물어보러 갔습니다. 왜 그런지는 잠시 뒤에 나옵니다.
 
@@ -189,7 +189,7 @@ export가 만드는 캐시는 다음 빌드용이니 이번 사용자가 기다�
 그래서 Job은 한 줄도 안 건드리고, Core가 "성공"을 판정하는 시점만 앞당겼습니다. Core에는 이미 두 루프가 돕니다. 사용자에게 빌드 로그를 보여주려고 1초마다 파드 로그를 읽는 tailer와, Job이 끝나길 기다렸다 배포하는 `_run_build`입니다. tailer가 push 완료 마커를 발견하면 신호를 올리게 하고, `_run_build`는 그 신호와 Job 종료 중 먼저 오는 쪽을 기다리게 바꿨습니다.
 
 ```diff
-- success, job_ended_at = await job_task     # (기존) Job 종료까지 — export 포함
+- success, job_ended_at = await job_task     # (기존) Job 종료까지 - export 포함
 + await _wait_first(push_done, job_task)     # push 완료든 Job 종료든 먼저 오는 쪽
 + if push_done.is_set():
 +     success = True                          # 이미지는 이미 올라갔다. 배포로 직행.
@@ -205,8 +205,8 @@ export가 만드는 캐시는 다음 빌드용이니 이번 사용자가 기다�
 + if push_done is not None and not push_done.is_set():
 +     exp = _EXPORT_IMAGE_RE.search(logs)                # "exporting to image" 앵커
 +     if exp and _PUSH_DONE_RE.search(logs, exp.end()):  # 그 뒤 첫 push 완료
-+         push_marker["at"] = now()                      # 계측점 — 노출 시간을 여기서 잰다
-+         push_done.set()                                # 트리거 — _run_build을 깨운다
++         push_marker["at"] = now()                      # 계측점 - 노출 시간을 여기서 잰다
++         push_done.set()                                # 트리거 - _run_build을 깨운다
 
   if logs != last:                                       # (기존) 로그를 DB에 저장
       row.logs = logs
@@ -227,7 +227,7 @@ export가 실패하면 `build.status`는 건드리지 않고 경고 지표(`cach
 
 | 구성 | 사용자 체감 | 빌드+push | export 노출분 | push 완료 → 앱 뜸 |
 | --- | --- | --- | --- | --- |
-| 캐시 OFF | 464s | 365s | — | 99s |
+| 캐시 OFF | 464s | 365s | - | 99s |
 | 캐시 + 동기 export | 408s | 283s | 24s | 126s |
 | 캐시 + early-trigger | 386s | 285s | 25s | 101s |
 

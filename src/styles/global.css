@@ -125,10 +125,10 @@ b, strong { font-weight: 700; color: var(--ink); }
 .tree { position: relative; border-top: 1px solid var(--line); padding-top: 52px; margin-top: 52px; }
 .tree::before { content: ""; position: absolute; left: -34px; top: 78px; bottom: 6px; border-left: 2px solid var(--rail); }
 .tree-head { position: relative; display: flex; align-items: baseline; gap: 12px; }
-/* 노드는 짝수 크기 + 정수 좌표 — 선(2px) 가운데에 정확히 놓인다. 크기는 포폴 정도(○ 10px, ● 12px) */
+/* 노드 크기는 포폴 화면 그대로 ●·○ 모두 13px (슬림 11px). 홀수라 left를 0.5px 단위로 줘서 선(2px) 가운데에 맞춘다 */
 .tree-head::after {
-  content: ""; position: absolute; left: -38px; top: 50%; transform: translateY(-50%);
-  width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--node); background: var(--bg); /* 가운데 빈 고리 */
+  content: ""; position: absolute; left: -39.5px; top: 50%; transform: translateY(-50%);
+  width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--node); background: var(--bg); /* 가운데 빈 고리 */
 }
 .tree-title { font-size: clamp(24px, 5vw, 28px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; color: var(--ink); }
 .tree-sub { font-size: 13px; color: var(--faint); }
@@ -139,23 +139,23 @@ b, strong { font-weight: 700; color: var(--ink); }
   transition: border-color 0.15s ease;
 }
 .item::before {
-  content: ""; position: absolute; left: -38px; top: 30px;
-  width: 10px; height: 10px; border: 2px solid var(--node); background: var(--bg); border-radius: 50%;
+  content: ""; position: absolute; left: -39.5px; top: 30px;
+  width: 13px; height: 13px; border: 2px solid var(--node); background: var(--bg); border-radius: 50%;
 }
 .item + .item { margin-top: 16px; }
 a.item:hover { border-color: var(--uline); }
 a.item:hover .item-title { text-decoration: underline; text-decoration-color: var(--uline); text-underline-offset: 4px; }
 @media (max-width: 600px) { .item { padding: 20px 18px; } }
-.tree-head.lead::after { left: -39px; width: 12px; height: 12px; background: var(--ink); border-color: var(--ink); }
+.tree-head.lead::after { left: -39.5px; width: 13px; height: 13px; background: var(--ink); border-color: var(--ink); }
 .tree-head.next { margin-top: 56px; }
 .tree.flat .item::before { display: none; }
 /* 왼쪽 바깥 여백이 모자라면 트리를 안쪽 슬림 모드로 (포폴과 같은 문턱) */
 @media (max-width: 945px) {
   .tree { padding-left: 26px; }
   .tree::before { left: 5px; }
-  .tree-head::after { left: -24px; width: 8px; height: 8px; }
-  .item::before { left: -24px; width: 8px; height: 8px; }
-  .tree-head.lead::after { left: -25px; width: 10px; height: 10px; }
+  .tree-head::after { left: -25.5px; width: 11px; height: 11px; }
+  .item::before { left: -25.5px; width: 11px; height: 11px; }
+  .tree-head.lead::after { left: -25.5px; width: 11px; height: 11px; }
 }
 @media (max-width: 600px) { .tree { padding-top: 40px; margin-top: 40px; } .tree::before { top: 62px; } }
 

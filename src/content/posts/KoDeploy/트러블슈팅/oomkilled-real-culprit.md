@@ -222,7 +222,7 @@ master node만 수정하기 보단 같은 상황과 환경인 모든 노드에 �
     block: |
       keepcache=0
       metadata_expire=-1
-    marker: "# {mark} ANSIBLE MANAGED — IaC mode"
+    marker: "# {mark} ANSIBLE MANAGED - IaC mode"
 
 - name: Clean existing dnf cache
   command: dnf clean all
@@ -309,9 +309,9 @@ cgroup 한도는 답이 아니다. 2번에서 접은 이유 그대로 dnf만 죽
 
 후보는 셋 정도로 본다
 
-1. **갱신할 때만 swap을 임시로 켠다** — swapfile을 만들어 켜고, 갱신하고, 끄고 지운다. 5.2에서 swap을 접은 근거가 "매시간 thrashing"이었는데 그 전제가 사라졌으니 여기선 성립한다. 연 몇 번이면 감당할 만하고 재부팅도 비용도 없다
-2. **잠깐 스케일업했다 내린다** — 확실하지만 OCI에서 shape 변경은 인스턴스 재시작이 필요하고, Free Tier 한도 안에서 다른 노드 자원을 빼와야 한다
-3. **노드를 새로 만든다** — cattle 논리를 끝까지 밀면 이쪽이 일관되지만, master는 etcd가 있어서 그렇게 간단히 버리기 어렵다
+1. **갱신할 때만 swap을 임시로 켠다** - swapfile을 만들어 켜고, 갱신하고, 끄고 지운다. 5.2에서 swap을 접은 근거가 "매시간 thrashing"이었는데 그 전제가 사라졌으니 여기선 성립한다. 연 몇 번이면 감당할 만하고 재부팅도 비용도 없다
+2. **잠깐 스케일업했다 내린다** - 확실하지만 OCI에서 shape 변경은 인스턴스 재시작이 필요하고, Free Tier 한도 안에서 다른 노드 자원을 빼와야 한다
+3. **노드를 새로 만든다** - cattle 논리를 끝까지 밀면 이쪽이 일관되지만, master는 etcd가 있어서 그렇게 간단히 버리기 어렵다
 
 지금 상태를 한 줄로 정리하면 이렇다. **무인 반복은 없앴고 버전 고정은 IaC 방향에 맞지만, 계획된 갱신을 치를 방법은 아직 정하지 못했다.**
 

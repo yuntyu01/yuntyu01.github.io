@@ -64,7 +64,7 @@ BuildKit Job이 에러로 종료됐고, 재시도 횟수(`backoffLimit`)를 다 
 
 #### **가설**
 
-docker.io의 lookup 문제(DNS)에 ****직전 게시물에서 볼 수 있듯이 OOM으로 인한 문제가 있었기에 CoreDNS가 내가 모를 연쇄 작용으로 죽었나? 싶어 확인해보았다
+docker.io의 lookup 문제(DNS)에 직전 게시물에서 볼 수 있듯이 OOM으로 인한 문제가 있었기에 CoreDNS가 내가 모를 연쇄 작용으로 죽었나? 싶어 확인해보았다
 
 #### **검증**
 
@@ -227,7 +227,7 @@ anti-spoofing의 가설이 현재 상황과 딱 맞아떨어졌기에 곧장 바
 
 해결의 핵심은 **VNIC가 source/destination이 자신의 Node IP와 일치하지 않는 패킷을 drop한다면**, Pod 패킷을 Node IP를 가진 패킷으로 캡슐화했을 때 통과할 것이라는 점이었다. 이를 빠르게 검증하기 위해 Calico의 `ipipMode`를 사용했다.
 
-#### Calico ipipMode — 캡슐화 옵션
+#### Calico ipipMode - 캡슐화 옵션
 
 Calico는 노드 간 Pod 트래픽을 전달할 때 IPIP 캡슐화를 사용할 수 있다.
 
@@ -356,8 +356,8 @@ Pod에 전달
 
 결국 같은 문제를 **어느 레이어에서 해결할 것인가**의 선택이었다.
 
-1. **Calico IPIP Always** — Kubernetes 레이어에서 Pod 트래픽을 캡슐화
-2. **OCI `skip_source_dest_check`** — 인프라 레이어에서 VNIC의 source/destination check 비활성화
+1. **Calico IPIP Always** - Kubernetes 레이어에서 Pod 트래픽을 캡슐화
+2. **OCI `skip_source_dest_check`** - 인프라 레이어에서 VNIC의 source/destination check 비활성화
 
 두 방법의 trade-off를 비교한 뒤 KoDeploy에 더 적합한 방식을 선택하기로 했다.
 

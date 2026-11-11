@@ -193,25 +193,26 @@ const next = idx >= 0 && idx < series.length - 1 ? series[idx + 1] : null;
   .toc a.on { color: var(--ink); font-weight: 700; border-left-color: var(--ink); }
 
   /* ── 트리 레일 ─────────────────────────────────
-     세로선 가운데 = -33px. 노드는 크기의 절반만큼 왼쪽으로 빼서 선 위에 올린다.
-     글 제목 ● 12px 검정 / 큰 절 ○ 10px (회색 고리) / 작은 절은 원 없음. 짝수 크기 + 정수 좌표라 선 가운데에 정확히 */
+     노드: 글 제목 ● 검정 / 큰 절(0. 1. 2. = h2) ○ 회색 고리. 작은 절(1-1 = h3)에는 두지 않는다.
+     크기는 포폴과 같은 13px (슬림 11px).
+     세로선 가운데 = -46px — 제목 글씨가 커서 포폴(-33px)보다 한 칸 더 띄운다 (원 끝 ~ 글자 약 40px).
+     홀수 크기라 left를 0.5px 단위로 줘서 선 가운데에 맞춘다 */
   .post-tree { position: relative; }
-  .post-tree::before { content: ""; position: absolute; left: -34px; top: var(--rail-top, 90px); bottom: 0; border-left: 2px solid var(--rail); }
-  h1, .prose :global(h2), .prose :global(h3) { position: relative; }
+  .post-tree::before { content: ""; position: absolute; left: -47px; top: var(--rail-top, 90px); bottom: 0; border-left: 2px solid var(--rail); }
+  h1, .prose :global(h2) { position: relative; }
   h1::after {
-    content: ""; position: absolute; left: -39px; top: 0.65em; transform: translateY(-50%);
-    width: 12px; height: 12px; border-radius: 50%; background: var(--ink);
+    content: ""; position: absolute; left: -52.5px; top: 0.65em; transform: translateY(-50%);
+    width: 13px; height: 13px; border-radius: 50%; background: var(--ink);
   }
   .prose :global(h2)::after {
-    content: ""; position: absolute; left: -38px; top: 0.7em; transform: translateY(-50%);
-    width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--node); background: var(--bg);
+    content: ""; position: absolute; left: -52.5px; top: 0.7em; transform: translateY(-50%);
+    width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--node); background: var(--bg);
   }
   /* 왼쪽 여백이 모자라면 트리를 안쪽으로 (포폴 슬림 모드와 같은 방식) — 선 가운데 = 안쪽 26px 기준 -20px */
   @media (max-width: 945px) {
     .post-tree { padding-left: 26px; }
     .post-tree::before { left: 5px; }
-    h1::after { left: -25px; width: 10px; height: 10px; }
-    .prose :global(h2)::after { left: -24px; width: 8px; height: 8px; }
+    h1::after, .prose :global(h2)::after { left: -25.5px; width: 11px; height: 11px; }
   }
 
   .prose { padding-top: 12px; font-size: 16px; line-height: 1.85; word-break: keep-all; overflow-wrap: anywhere; }

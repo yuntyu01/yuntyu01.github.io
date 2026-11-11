@@ -6,7 +6,7 @@ export const SITE = {
   description: "Kubernetes 위에 직접 만든 배포 플랫폼 KoDeploy를 운영하며 겪은 일을 기록합니다.",
   github: "https://github.com/yuntyu01",
   email: "yuntyu01@gmail.com",
-  portfolio: "https://yuntyu01.github.io/PORTFOLIO/",
+  portfolio: "/PORTFOLIO/", // 포트폴리오 한 장 = public/PORTFOLIO/index.html (예전 PORTFOLIO 저장소에서 옮겨 옴)
   kodeploy: "https://kodeploy.com/",
 };
 
